@@ -19,22 +19,27 @@
 var app = {
     // Application Constructor
     initialize: function() {
-        document.addEventListener('deviceready', this.onDeviceReady.bind(this), false);
+        this.bindEvents();
     },
-
+    // Bind Event Listeners
+    //
+    // Bind any events that are required on startup. Common events are:
+    // 'load', 'deviceready', 'offline', and 'online'.
+    bindEvents: function() {
+        document.addEventListener('deviceready', this.onDeviceReady, false);
+    },
     // deviceready Event Handler
     //
-    // Bind any cordova events here. Common events are:
-    // 'pause', 'resume', etc.
+    // The scope of 'this' is the event. In order to call the 'receivedEvent'
+    // function, we must explicitly call 'app.receivedEvent(...);'
     onDeviceReady: function() {
-        this.receivedEvent('deviceready');
+        app.receivedEvent('deviceready');
     },
-
     // Update DOM on a Received Event
     receivedEvent: function(id) {
         var parentElement = document.getElementById(id);
-        var listeningElement = parentElement.querySelector('.listening');
-        var receivedElement = parentElement.querySelector('.received');
+      //  var listeningElement = parentElement.querySelector('.listening');
+       // var receivedElement = parentElement.querySelector('.received');
 
         listeningElement.setAttribute('style', 'display:none;');
         receivedElement.setAttribute('style', 'display:block;');
@@ -42,5 +47,52 @@ var app = {
         console.log('Received Event: ' + id);
     }
 };
+function init() {
+    document.addEventListener("deviceready", deviceReady, true);
+    delete init;
+}
 
-app.initialize();
+
+function checkPreAuth() {
+    var form = $("#loginForm");
+    if(window.localStorage["username"] != undefined && window.localStorage["password"] != undefined) {
+        $("#username", form).val(window.localStorage["username"]);
+        $("#password", form).val(window.localStorage["password"]);
+        handleLogin();
+    }
+}
+
+function handleLogin() {
+    var form = $("#loginForm"); 
+    //disable the button so we can't resubmit while we wait
+    $("#submitButton",form).attr("disabled","disabled");
+    var u = $("#username", form).val();
+    var p = $("#password", form).val();
+	alert(u+','+p);
+    if(u != '' && p!= '') {
+        $.post("http://rayi.in/naboSupport/login/", {username:u,password:p}, function(res) {
+            if(res == true) {
+                //store
+                window.localStorage["username"] = u;
+                window.localStorage["password"] = p;                    
+                //$.mobile.changePage("user.html");
+				window.location = "user.html";
+            } else {
+                navigator.notification.alert("Your login failed", function() {});
+            }
+            $("#submitButton").removeAttr("disabled");
+        },"json");
+    } else {
+        //Thanks Igor!
+
+        navigator.notification.alert("You must enter a username and password", function() {});
+        $("#submitButton").removeAttr("disabled");
+    }
+    return false;
+}
+
+function deviceReady() {
+    
+    jQuery("#loginForm").on("submit",handleLogin);
+
+}
